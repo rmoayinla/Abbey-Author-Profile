@@ -7,7 +7,7 @@ $profile_states = ( !empty( $data_json[ "state" ] ) ) ? $data_json[ "state" ] : 
 
 	$sections[ "bio" ] = array( 
 				"id" => "bio_section", 
-				"title" => __( "Persnal/Bio Data", "abbey-author-profile" )
+				"title" => __( "Personal/Bio Data", "abbey-author-profile" )
 	);
 
 	$fields[ "phone_no" ] = array(
@@ -15,7 +15,7 @@ $profile_states = ( !empty( $data_json[ "state" ] ) ) ? $data_json[ "state" ] : 
 		"title" => __( "Enter your phone number", "abbey-author-profile" ), 
 		"callback" => "author_profile_fields", 
 		"section" => "main_section", 
-		"args" => array( "name" => "options[phone_no]", "key" => "phone_no", 
+		"args" => array(  "key" => "phone_no", 
 		"callback" => "sanitize_text", "type" => "number" )
 	);
 
@@ -34,14 +34,17 @@ $profile_states = ( !empty( $data_json[ "state" ] ) ) ? $data_json[ "state" ] : 
 		"callback" => "author_profile_fields", 
 		"section" => "main_section",
 		"args" => array( "type" => "select", "choices" => array(), 
-						"attributes" => array( "data-respond" => "country", "data-json" => "state" ) )
+						"attributes" => array(  
+							"data-json" => "state", "data-respond" => "country"
+						) 
+					)
 	);
 
 	$fields[ "date_of_birth" ] = array(
 		"id" => "dob", 
 		"title" => __( "Date of Birth:", "abbey-author-profile" ),
 		"section" => "bio_section", 
-		"args" => array( "type" => "date", "name" => "options[date_of_birth]", "key" => "date_of_birth" )
+		"args" => array( "type" => "date", "key" => "date_of_birth" )
 	);
 
 	$fields[ "sex" ] = array(
@@ -68,9 +71,21 @@ $profile_states = ( !empty( $data_json[ "state" ] ) ) ? $data_json[ "state" ] : 
 		"id" => "languages", 
 		"title" => __( "Languages spoken:", "abbey-author-profile" ), 
 		"section" => "bio_section", 
-		"args" => array( "type" => "quicktags",
-						 "attributes" => array( "placeholder" => __( "Let's know the languages you speak" ) ) 
+		"args" => array( "attributes" => array( 
+						"placeholder" => __( "Let's know the languages you speak" ), 
+						"class" => [ "quicktags" ] 
 						) 
+				) 
+	);
+
+	$fields[ "hobbies" ] = array(
+		"id" => "hobbies", 
+		"title" => __( "Interests/Hobbies:", "abbey-author-profile" ), 
+		"section" => "bio_section", 
+		"args" => array(
+			"type" => "text", 
+			"attributes" => [ "class" => [ "quicktags", "large-box" ], "placeholder" => __( "Tell us things you love doing" ) ]
+		)
 	);
 
 

@@ -7,10 +7,11 @@
 		}
 		countries = profile_data.country; 
 		
-		$("input.quicktags").tagEditor({ 
-			initialTags: [], 
-    		delimiter: ', '
+		$(".quicktags").tagEditor({ 
+    		delimiter: ','
     	});
+
+    	
 
 		$(document).on( "change", "#profile-form select", function( e ){
 			e.preventDefault();

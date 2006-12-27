@@ -10,12 +10,13 @@ class Abbey_Profile_Field {
 
 	public function display_field( $args ){
 		$field = $value = $name = $id = "";
-		$value = !empty( $this->options[ $args[ "key" ] ] ) ? esc_attr( $this->options[ $args[ "key" ] ] ) : ""; 
+		$value = $this->get_field_value( $args[ "section_key" ], $args[ "key" ], $this->options );
 		$name = $args[ "name" ]; 
 		$id = $args[ "id" ];
 		$field = "<fieldset>";
 		$args[ "attributes" ][ "data-name" ] = $name;
 		$attributes = $class = ""; 
+		
 		
 		if( !empty( $args[ "attributes" ] ) ){
 			$class= ( !empty( $args[ "attributes" ][ "class" ] ) )  ? $args[ "attributes" ][ "class" ] : array();
@@ -55,33 +56,45 @@ class Abbey_Profile_Field {
 								esc_attr( implode( $class, " " ) ), 
 								$attributes
 							 ); 
-			$choices = $args[ "choices" ];
+			$respond_data = array();
+			$choices = !empty( $args[ "choices" ]) ? $args[ "choices" ] : array();
 
-			if( !empty( $args[ "attributes" ][ "data-json" ] )  )
+			if( !empty( $args[ "attributes" ][ "data-json" ] )  ){
+				
 				if( !empty( $args[ "attributes" ][ "data-json" ] ) && 
 					!empty( $this->data_json[ $args[ "attributes" ][ "data-json" ] ] ) 
 				){
-					//{ "states" : {} } 
+					//{ "states" : {} } //
 					$choices = $this->data_json[ $args[ "attributes" ][ "data-json" ] ];
-					if( !empty( $args[ "attributes" ][ "data-respond" ] ) &&
-						!empty( $this->options[ $args["attributes" ][ "data-respond" ] ] ) 
-					)
-						//{ "states": { "Nigeria": {} } }
-						$choices = !empty( $choices[ $this->options[ $args["attributes" ][ "data-respond" ] ] ] ) ?
-									$choices[ $this->options[ $args["attributes" ][ "data-respond" ] ] ] : 
-									array();
 				}
+				if( !empty( $args[ "attributes" ][ "data-respond" ] ) && 
+					!empty( $this->data_json[ $args[ "attributes" ][ "data-respond" ] ] ) 
+				){
+					$respond_data = $this->get_field_value( $args[ "section_key" ], 
+															$args[ "attributes" ][ "data-respond" ], 
+															$this->options 
+														);
+					$choices = ( !empty( $respond_data ) && !empty( $choices[ $respond_data ] ) ) ? 
+								$choices[ $respond_data ] : array();
+				}
+
+					
+			}
 			//======= end if ( $args["attributes"]["data-json"] ) ============ //
 
 			if( !empty( $choices ) ){
-				if( !empty( $value ) && !in_array( $value, $choices ) && empty( $args[ "attributes" ][ "data-json" ] ) )
+				if( !empty( $value ) && 
+					!in_array( $value, $choices ) &&
+					!array_key_exists( $value, $choices )  && 
+					empty( $args[ "attributes" ][ "data-json" ] ) 
+				){
 					$choices[ $value ] = $value;
+				}
 				foreach ( $choices as $key => $choice ){
 					$option_value = is_int( $key ) ? $choice : $key; 
-					$field .= sprintf( '<option value="%1$s" %2$s >%3$s</option>', 
+					$field .= sprintf( '<option value="%1$s" %2$s >%1$s</option>', 
 										esc_attr( $option_value ), 
-										selected( $value, $option_value, false ),
-										esc_attr( $choice )
+										selected( $value, $option_value, false )
 									 );
 				}
 			} //endif empty choices  //
@@ -118,20 +131,35 @@ class Abbey_Profile_Field {
 				}
 		}
 		//************* end if radio and checkbox ************** //
-		elseif( $args[ "type" ] === "quicktags" ){
-			$class[] = "quicktags";
-
-			$field .= sprintf( '<input type="text" name="%1$s" value="%2$s" class= "%3$s" %4$s />', 
+		elseif( $args[ "type" ] === "textarea" ){
+			if( empty( $args[ "attributes" ][ "rows" ] ) )
+				$attributes .= " rows='10' ";
+			if( empty( $args[ "attributes" ][ "cols" ] ) )
+				$attributes .= " cols='20' ";
+			
+			$field .= sprintf( '<textarea class="%1$s" name="%2$s" value="%3$s" id="%4$s" %5$s></textarea>', 
+								esc_attr( implode( $class, " " ) ),
 								esc_attr( $name ), 
 								esc_attr( $value ), 
-								esc_attr( implode( $class, " " ) ),
+								esc_attr( $id ), 
 								$attributes
-							);
-			
+								 );
+
 		}
 		
 		$field .= "</fieldset>";
 
-		echo $field;
+		echo $field;;
 	}
+
+	function get_field_value( $section_key, $key, $options ){
+		if( array_key_exists( $section_key, $options ) ){
+			$section = $options[ $section_key ];
+			if( is_array( $section ) )
+				return !empty( $section[ $key ] ) ? $section[ $key ] : "";
+		}
+		return "";
+	}
+
+	
 }

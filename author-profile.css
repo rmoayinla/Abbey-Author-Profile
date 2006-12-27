@@ -2,6 +2,10 @@ input[type="text"]{
 	width: 75%;
 }
 
+.large-box + .tag-editor{
+	height: 120px;
+}
+
 .radio label{
 	padding-left: 5px;
 	padding-right: 5px;

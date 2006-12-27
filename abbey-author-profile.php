@@ -38,7 +38,7 @@ class Abbey_Author_Profile {
 			"title" => __( "Enter your local address", "abbey-author-profile" ), 
 			"callback" => "author_profile_fields", 
 			"section" => "main_section", 
-			"args" => array( "name" => "options[address]", "key" => "address", 
+			"args" => array( "key" => "address", 
 			"callback" => "sanitize_text", "type" => "text" )
 		);
 
@@ -140,17 +140,19 @@ class Abbey_Author_Profile {
 
 		if( count( $this->fields ) > 0 ){
 			foreach( $this->fields as $field ){
-				$field[ "args" ][ "name" ] = !empty( $field[ "args" ][ "name" ] ) ?
-												$this->prefix."_".ltrim( $field[ "args" ][ "name" ], "_" ) :
-												$this->prefix."_options[".ltrim( $field[ "id" ], "_" )."]";
+				$f_section = str_ireplace( "_section", "", $field[ "section" ] );
 				$field[ "callback" ] = !empty( $field[ "callback" ] ) ? $field[ "callback" ] :
 										"author_profile_fields";
 				$args["type"] = "text";
 				$args[ "id" ] =  $this->prefix."_".ltrim( $field[ "id" ], "_" );
 				$args[ "key" ] = $field[ "id" ];
+				$args[ "section_key" ] = $f_section;
 				$args[ "callback" ] = "sanitize_text";
-				
+				$args[ "name" ] = $this->prefix."_options".
+								ltrim( "[".$f_section."][".$args[ 'key' ]."]", "_" );
+
 				$field[ "args" ] = wp_parse_args( $field[ "args" ], $args );
+
 				add_settings_field(
 					$this->prefix."_".ltrim( $field["id"], "_" ),
 					$field["title"], 
@@ -182,11 +184,11 @@ class Abbey_Author_Profile {
 			return; 
 
 		wp_enqueue_style( 'author-profile-css', plugin_dir_url( __FILE__ )."/author-profile.css"  );
-		wp_enqueue_style( 'jquery-core-css', "//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" );
+		//wp_enqueue_style( 'jquery-core-css', "//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" );
 		wp_enqueue_style( 'tag-css', plugin_dir_url( __FILE__ )."libs/quicktags/jquery.tag-editor.css"  );
 
 		wp_enqueue_script( "caret-script", plugin_dir_url( __FILE__ )."/libs/quicktags/jquery.caret.min.js", array( "jquery" ), "", true );
-		wp_enqueue_script( "tag-script", plugin_dir_url( __FILE__)."/libs/quicktags/jquery.tag-editor.js", 
+		wp_enqueue_script( "tag-script", plugin_dir_url( __FILE__)."/libs/quicktags/jquery.tag-editor.min.js", 
 							array( "jquery"), "", true );
 		
 		wp_enqueue_script( "author-profile-script", plugin_dir_url( __FILE__ )."author-profile.js", 
@@ -213,12 +215,7 @@ class Abbey_Author_Profile {
 		require_once( plugin_dir_path( __FILE__ )."profile-options.php" );
 	}
 
-	function sanitize_text( $text, $type ){
-		require_once( plugin_dir_path( __FILE__ )."sanitize-options.php" );
-		$sanitizer = new Abbey_Profile_Sanitizer(); 
-		return $sanitizer->sanitize( $text, $type ); 
-
-	}
+	
 }
 
 add_filter( "abbey_author_profile_json_data", function( $data ) {

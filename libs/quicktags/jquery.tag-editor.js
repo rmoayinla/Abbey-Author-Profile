@@ -84,7 +84,6 @@
 
             // helper: update global data
             function set_placeholder(){
-					o.placeholder = o.placeholder ? o.placeholder : el.attr( "placeholder" );
                 if (o.placeholder && !tag_list.length && !$('.deleted, .placeholder, input', ed).length)
                     ed.append('<li class="placeholder"><div>'+o.placeholder+'</div></li>');
             }
@@ -355,7 +354,7 @@
         maxTags: 0,
         maxLength: 50,
         delimiter: ',;',
-        placeholder: $(this).attr( "placeholder" ),
+        placeholder: '',
         forceLowercase: true,
         removeDuplicates: true,
         clickDelete: false,
