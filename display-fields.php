@@ -17,8 +17,13 @@ class Abbey_Profile_Field {
 		$args[ "attributes" ][ "data-name" ] = $name;
 		$attributes = ""; 
 		if( !empty( $args[ "attributes" ] ) ){
+			$args[ "attributes" ][ "class" ][] = "profile-".esc_attr( $args[ "key" ] );
+
 			foreach( $args[ "attributes" ] as $attribute => $attr_value ){
-				$attributes .= sprintf( '%1$s="%2$s" ', $attribute, esc_attr( $attr_value ) );
+				if( is_array( $attr_value ) )
+					$attributes .= sprintf( '%1$s="%2$s" ', $attribute, esc_attr( implode( $attr_value, " " ) ) );
+				else
+					$attributes .= sprintf( '%1$s="%2$s" ', $attribute, esc_attr( $attr_value ) );
 			}
 		}
 
@@ -49,7 +54,7 @@ class Abbey_Profile_Field {
 			//======= end if ( $args["attributes"]["data-json"] ) ============ //
 
 			if( !empty( $choices ) ){
-				if( !empty( $value ) && !in_array( $value, $choices ) )
+				if( !empty( $value ) && !in_array( $value, $choices ) && empty( $args[ "attributes" ][ "data-json" ] ) )
 					$choices[ $value ] = $value;
 				foreach ( $choices as $key => $choice ){
 					$option_value = is_int( $key ) ? $choice : $key; 

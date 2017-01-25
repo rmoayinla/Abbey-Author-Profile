@@ -212,6 +212,8 @@ class Abbey_Author_Profile {
 
 add_filter( "abbey_author_profile_json_data", function( $data ) {
 		$data["state"]["Nigeria"] = array( "Lagos", "Ogun", "Osun", "Oyo", "Osun", "Edo", "Kwara" );
+		$data["state"]["South Africa"] = array( "Cape Town", "Johannesburg" );
+		$data["state"][ "Ghana" ] = array( "Accra", "Kumasi" );
 		return $data;
 });
 

@@ -13,6 +13,14 @@
             "Osun",
             "Edo",
             "Kwara"
+        ],
+        "South Africa": [
+            "Cape Town",
+            "Johannesburg"
+        ],
+        "Ghana": [
+            "Accra",
+            "Kumasi"
         ]
     },
     "lga": {
