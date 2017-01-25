@@ -1,0 +1,23 @@
+{
+    "country": [
+        "Nigeria",
+        "Ghana",
+        "South Africa"
+    ],
+    "state": {
+        "Nigeria": [
+            "Lagos",
+            "Ogun",
+            "Osun",
+            "Oyo",
+            "Osun",
+            "Edo",
+            "Kwara"
+        ]
+    },
+    "lga": {
+        "Nigeria": {
+            "lagos": []
+        }
+    }
+}
