@@ -7,6 +7,11 @@
 		}
 		countries = profile_data.country; 
 		
+		$("input.quicktags").tagEditor({ 
+			initialTags: [], 
+    		delimiter: ', '
+    	});
+
 		$(document).on( "change", "#profile-form select", function( e ){
 			e.preventDefault();
 			var _this = $(this);
@@ -44,6 +49,13 @@
 
 			//$( "input[type='submit']" ).click();
 		});
+
+		$( "input[type='date']" ).datepicker({
+			      changeMonth: true,
+			      changeYear: true
+    	});
+
+
 		
 
 	}); //document.ready //

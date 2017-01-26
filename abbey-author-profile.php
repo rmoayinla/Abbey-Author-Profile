@@ -143,19 +143,14 @@ class Abbey_Author_Profile {
 				$field[ "args" ][ "name" ] = !empty( $field[ "args" ][ "name" ] ) ?
 												$this->prefix."_".ltrim( $field[ "args" ][ "name" ], "_" ) :
 												$this->prefix."_options[".ltrim( $field[ "id" ], "_" )."]";
+				$field[ "callback" ] = !empty( $field[ "callback" ] ) ? $field[ "callback" ] :
+										"author_profile_fields";
+				$args["type"] = "text";
+				$args[ "id" ] =  $this->prefix."_".ltrim( $field[ "id" ], "_" );
+				$args[ "key" ] = $field[ "id" ];
+				$args[ "callback" ] = "sanitize_text";
 				
-				$field[ "args" ][ "type" ] = !empty( $field[ "args" ][ "type" ] ) ? 
-											 $field[ "args" ][ "type" ] : 
-											 "text";
-
-				$field[ "args" ][ "id" ] = !empty( $field[ "args" ][ "id" ] ) ? 
-											$field[ "args" ][ "id" ] : 
-											$this->prefix."_".ltrim( $field[ "id" ], "_" );
-
-				$field[ "args" ][ "key" ] = !empty( $field[ "args" ][ "key" ] ) ? 
-											$field[ "args" ][ "key" ] : 
-											$field[ "id" ];
-			
+				$field[ "args" ] = wp_parse_args( $field[ "args" ], $args );
 				add_settings_field(
 					$this->prefix."_".ltrim( $field["id"], "_" ),
 					$field["title"], 
@@ -187,7 +182,23 @@ class Abbey_Author_Profile {
 			return; 
 
 		wp_enqueue_style( 'author-profile-css', plugin_dir_url( __FILE__ )."/author-profile.css"  );
-		wp_enqueue_script( "author-profile-script", plugin_dir_url( __FILE__ )."/author-profile.js", array( "jquery" ), 1.0, true );
+		wp_enqueue_style( 'jquery-core-css', "//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" );
+		wp_enqueue_style( 'tag-css', plugin_dir_url( __FILE__ )."libs/quicktags/jquery.tag-editor.css"  );
+
+		wp_enqueue_script( "caret-script", plugin_dir_url( __FILE__ )."/libs/quicktags/jquery.caret.min.js", array( "jquery" ), "", true );
+		wp_enqueue_script( "tag-script", plugin_dir_url( __FILE__)."/libs/quicktags/jquery.tag-editor.js", 
+							array( "jquery"), "", true );
+		
+		wp_enqueue_script( "author-profile-script", plugin_dir_url( __FILE__ )."author-profile.js", 
+							array( "jquery"), 1.0, true );
+
+		wp_enqueue_script( "jquery-ui-core" );
+		wp_enqueue_script( "jquery-ui-widget" );
+		wp_enqueue_script( "jquery-ui-widget" );
+		wp_enqueue_script( "jquery-ui-autocomplete" );
+		wp_enqueue_script( "jquery-ui-position" );
+		wp_enqueue_script( "jquery-ui-datepicker" );
+
 		wp_localize_script( "author-profile-script", "abbeyAuthorProfile", 
 			array(
 				"data_json" => $this->data_json
@@ -226,4 +237,5 @@ $json_data = new Abbey_Json();
 $abbey_author_profile = new Abbey_Author_Profile( $json_data );
 $abbey_author_profile->setup_admin_page();
 $abbey_author_profile->add_field( $fields );
+$abbey_author_profile->add_section( $sections );
 $abbey_author_profile->init();
