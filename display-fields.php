@@ -10,18 +10,32 @@ class Abbey_Profile_Field {
 
 	public function display_field( $args ){
 		$field = $value = $name = $id = "";
-		$value = $this->get_field_value( $args[ "section_key" ], $args[ "key" ], $this->options );
+		$value = "";
 		$name = $args[ "name" ]; 
 		$id = $args[ "id" ];
 		$field = "<fieldset>";
 		$args[ "attributes" ][ "data-name" ] = $name;
 		$attributes = $class = ""; 
 		
-		
+		if( empty( $args[ "repeater_key" ] ) && empty( $args[ "repeater_no" ] ) ){
+			$value = $this->get_field_value( $args[ "section_key" ], $args[ "key" ], $this->options );
+		}
+		elseif( !empty( $args[ "repeater_key" ] ) && 
+				array_key_exists( $args[ "repeater_key" ], $this->options[ "repeater" ] )
+			 ){
+			$repeater = $this->options[ "repeater" ][ $args[ "repeater_key" ] ];
+			if( is_array( $repeater ) && array_key_exists( $args[ "repeater_no" ], $repeater ) )
+				$value = $this->get_field_value( $args[ "repeater_no" ], $args[ "key" ], $repeater );
+			else 
+				$value = "";
+		}
+
 		if( !empty( $args[ "attributes" ] ) ){
 			$class= ( !empty( $args[ "attributes" ][ "class" ] ) )  ? $args[ "attributes" ][ "class" ] : array();
 			$class[] = "profile-".esc_attr( $args[ "key" ] );
-			
+			if( !empty( $args[ "repeater_key" ] ) || !empty( $args[ "repeater_no" ] ) )
+				$class[] = "repeater-group";
+
 			if( !empty( $args[ "attributes" ][ "class" ] ) )
 				unset( $args[ "attributes" ][ "class" ] );
 
@@ -92,9 +106,10 @@ class Abbey_Profile_Field {
 				}
 				foreach ( $choices as $key => $choice ){
 					$option_value = is_int( $key ) ? $choice : $key; 
-					$field .= sprintf( '<option value="%1$s" %2$s >%1$s</option>', 
+					$field .= sprintf( '<option value="%1$s" %2$s >%3$s</option>', 
 										esc_attr( $option_value ), 
-										selected( $value, $option_value, false )
+										selected( $value, $option_value, false ), 
+										$choice
 									 );
 				}
 			} //endif empty choices  //
@@ -149,7 +164,7 @@ class Abbey_Profile_Field {
 		
 		$field .= "</fieldset>";
 
-		echo $field;;
+		echo $field; print_r( $args );
 	}
 
 	function get_field_value( $section_key, $key, $options ){

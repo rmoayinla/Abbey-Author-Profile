@@ -41,10 +41,10 @@ $profile_states = ( !empty( $data_json[ "state" ] ) ) ? $data_json[ "state" ] : 
 	);
 
 	$fields[ "date_of_birth" ] = array(
-		"id" => "dob", 
+		"id" => "date_of_birth", 
 		"title" => __( "Date of Birth:", "abbey-author-profile" ),
 		"section" => "bio_section", 
-		"args" => array( "type" => "date", "key" => "date_of_birth" )
+		"args" => array( "type" => "date" )
 	);
 
 	$fields[ "sex" ] = array(
@@ -89,6 +89,23 @@ $profile_states = ( !empty( $data_json[ "state" ] ) ) ? $data_json[ "state" ] : 
 	);
 
 
+	$repeaters[ "experience" ] = array(
+		"id" => "experience", 
+		"repeaters" =>  array(
+			array(
+				"company" => array(
+					"id" => "company",
+					"title" => __( "Organisation/Institution name:", "abbey-author-profile" ), 
+					"args" => array( "type" => "text" )
+				), 
+				"year" => array(
+					"id" => "year", 
+					"title" => __( "Started on:", "abbey-author-profile" ), 
+					"args" => array( "type" => "date" )
+				)
+			)
+		)
+	);
 
 
 

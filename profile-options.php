@@ -23,6 +23,7 @@
 			} //endforeach //
 		}//end if count options //*/
 		$this->options = processform( $options, $this->fields );
+		$this->message = $options;
 
 		if( !empty( $this->options ) )
 			update_user_meta( $user, $this->prefix."_options", $this->options );

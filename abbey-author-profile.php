@@ -74,8 +74,52 @@ class Abbey_Author_Profile {
 
 		if( count( $fields ) > 0 ){
 			foreach( $fields as $key => $field ){
+				$key = is_int( $key ) ? $field[ "id" ] : $key;
 				$this->fields[ $key ] = $field; 
 			}
+		}
+	}
+
+	function add_repeater( $repeaters ){
+		if( empty( $repeaters ) || !is_array( $repeaters ) )
+			return;
+		foreach( $repeaters as $id => $repeater ){
+			$id = is_int( $id ) ? $repeater[ "id" ] : $id;
+			if( empty( $repeater[ "section" ] ) || empty( $this->sections[ $repeater[ "section" ] ] ) ){
+				$repeater[ "section" ] = !empty( $repeater[ "section" ] ) ? $repeater[ "section" ] : $repeater[ "id" ];
+				$repeater[ "title" ] = !empty( $repeater[ "title" ] ) ? $repeater[ "title" ] : ucwords( $repeater[ "id" ] );
+				$section[ $repeater[ "id" ] ] =  array( "id" => $repeater[ "section" ]."_section", "title" => $repeater[ "title" ] );
+				$this->add_section( $section );
+			}
+
+			if( !empty( $repeater[ "repeaters" ] ) && is_array( $repeater[ "repeaters" ] ) ){
+				$fields = $repeater[ "repeaters" ];
+				foreach( $fields as $no => $repeater_field ){
+					foreach( $repeater_field as $key => $field ){
+						$args[ "id" ] =  $this->prefix."_".ltrim( $field[ "id" ], "_" );
+						$args[ "section" ] = $repeater[ "section" ]."_section";
+						$args[ "callback" ]	= "author_profile_fields";
+						$args[ "args" ][ "key" ] = $field[ "id" ];
+						$args[ "args" ][ "section_key" ] = $repeater[ "section" ]."_section";
+						$args[ "args" ][ "repeater_key" ] = $repeater[ "id" ];
+						$args[ "args" ][ "repeater_no" ] = $no;
+						$args[ "args" ]["type"] = "text";
+						$args["args"][ "name" ] = $this->prefix."_options[repeater][".
+										$repeater[ "id" ]."][".
+										$no."][".
+										$field["id"]."]";
+						
+
+						$field[ "args" ] = wp_parse_args( $field[ "args" ], $args[ "args" ] );
+						$field = wp_parse_args( $field, $args );
+
+						$this->fields[ $field["id"] ] = $field;
+						
+						
+					}
+				}
+			}
+			
 		}
 	}
 
@@ -113,7 +157,7 @@ class Abbey_Author_Profile {
 				
 				<?php submit_button();
 				print_r( $this->options );
-				print_r( $this->data_json );
+				print_r( $this->message );
 				?>
 			</form>	
 		</div>	<?php
@@ -126,8 +170,8 @@ class Abbey_Author_Profile {
 
 		if( count ( $this->sections ) > 0 ){
 			foreach( $this->sections as $section ){
-				$section[ "callback" ] = !empty( $section[ "callback" ] ) ? $section[ "callback" ] :
-											array( $this, "author_main_section" );
+				if( empty( $section[ "callback" ] ) )  
+					$section[ "callback" ] = array( $this, "author_main_section" );
 				
 				add_settings_section( 
 					$this->prefix."_".ltrim( $section["id"], "_" ),
@@ -184,7 +228,7 @@ class Abbey_Author_Profile {
 			return; 
 
 		wp_enqueue_style( 'author-profile-css', plugin_dir_url( __FILE__ )."/author-profile.css"  );
-		//wp_enqueue_style( 'jquery-core-css', "//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" );
+		wp_enqueue_style( 'jquery-core-css', "//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" );
 		wp_enqueue_style( 'tag-css', plugin_dir_url( __FILE__ )."libs/quicktags/jquery.tag-editor.css"  );
 
 		wp_enqueue_script( "caret-script", plugin_dir_url( __FILE__ )."/libs/quicktags/jquery.caret.min.js", array( "jquery" ), "", true );
@@ -235,4 +279,5 @@ $abbey_author_profile = new Abbey_Author_Profile( $json_data );
 $abbey_author_profile->setup_admin_page();
 $abbey_author_profile->add_field( $fields );
 $abbey_author_profile->add_section( $sections );
+$abbey_author_profile->add_repeater( $repeaters );
 $abbey_author_profile->init();
