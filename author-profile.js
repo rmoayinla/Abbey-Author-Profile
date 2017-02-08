@@ -54,64 +54,64 @@
 		$( document ).on( "focus", "input[type='date']", function( e ) {
 			var _this = $( this );
 			_this.datepicker({
-			      changeMonth: true,
-			      changeYear: true,
-			      showOn: 'focus'
-    		}).focus();
+			     changeMonth: true,
+			     changeYear: true,
+			     showOn: 'focus'
+			}).focus();
     	});
+    	
 
-		$(function () {
-			var repeatInput, repeatWrapper, addButton, deleteButton, repeaterForm, elemNum, indexNum;
-			repeatInput = $( "table .repeater-group:first-of-type" ); 
-			repeatWrapper = repeatInput.parents( "table" );
-			
-			addButton = '<button type="button" name="btnAdd" class="button btn-primary btn-add">Add</button>';
-			deleteButton = '<button type="button" name="btnDel" class="button btn-danger">Remove</button>';
-			
-			repeatWrapper.addClass( "repeater-wrapper" );
-			elemNum = repeatInput.length;
-			indexNum = parseInt( elemNum - 1 );
-
-			addButtons();
-
-			function addButtons(  ){
-				repeatInput.each( function( index ){
-					var _this, parent;
-					_this = $( this );
-					parent = _this.parents( "tbody" );
-					parent.find( ".repeater-buttons" ).remove();
-					parent.append( "<p class='repeater-buttons btn-"+index+"'>"+addButton+"</p>" );
-					if( index > 1 ){
-						parent.find( ".repeater-buttons" ).append( deleteButton );
-
-					}
-				});
-			}
-			
-			$( document ).on( "click", ".btn-add", function(e ){
-				e.preventDefault();
-				var newElem, _this, repeatElem; 
-				_this = $( this );
-				repeatElem = _this.parents( "tbody" );
-				newElem = repeatElem.clone( true, true ).fadeIn('slow');
-
-				newElem.find( ".repeater-group" ).each( function( i ){
-					var _this, oldName; 
-					_this = $( this );
-					oldName = _this.attr( "name" ).replace(/\[(\d)+\]/g, '['+indexNum+']');
-					_this.val( null ).attr( "name", oldName );
-				} );
-				
-				repeatElem.after(newElem);
-        		newElem.find( "input" ).filter( ":first" ).focus();
-
-        		addButtons();
-
-			});
-
-
-
-		});//function //
+	$(function () { 
+      var repeatInput, repeatWrapper, addButton, deleteButton, repeaterForm, elemNum, indexNum; 
+      repeatInput = $( ".repeater-group" );  
+      repeatWrapper = repeatInput.parents( "table" ); 
+       
+      addButton = '<button type="button" name="btnAdd" class="button btn-primary btn-add">Add</button>'; 
+      deleteButton = '<button type="button" name="btnDel" class="button btn-danger">Remove</button>'; 
+       
+      repeatWrapper.addClass( "repeater-wrapper" ); 
+      elemNum = repeatInput.length; 
+      indexNum = parseInt( elemNum - 1 ); 
+ 
+      addButtons(); 
+ 
+      function addButtons(){ 
+        $( "tr:first-of-type .repeater-group:first-of-type" ).each( function( index ){ 
+	          var _this, parent; 
+	          _this = $( this ); 
+	          parent = _this.parents( "tbody" ); 
+	          parent.find( ".repeater-buttons" ).remove(); 
+	          parent.append( "<p class='repeater-buttons btn-"+index+"'>"+addButton+"</p>" ); 
+	          if( index > 0 ){ 
+	            parent.find( ".repeater-buttons" ).append( deleteButton ); 
+	        } 
+        }); 
+      } 
+       
+      $( document ).on( "click", ".btn-add", function(e ){ 
+        e.preventDefault(); 
+        var newElem, _this, repeatElem;  
+        _this = $( this ); 
+        repeatElem = _this.parents( "tbody" ); 
+        newElem = repeatElem.clone( true, true ).fadeIn('slow'); 
+ 
+        newElem.find( ".repeater-group" ).each( function( i ){ 
+          var _this, oldName;  
+          _this = $( this ); 
+          oldName = _this.attr( "name" ).replace(/\[(\d)+\]/g, '['+indexNum+']'); 
+          _this.val( null ).attr( "name", oldName ); 
+        } ); 
+         
+        repeatElem.after(newElem); 
+            newElem.find( "input" ).filter( ":first" ).focus(); 
+ 
+            addButtons(); 
+ 
+      }); 
+ 
+ 
+ 
+    });//function // 
 
 		
 

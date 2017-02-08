@@ -51,7 +51,7 @@ class Abbey_Author_Profile {
 	}
 
 	function setup_admin_page(){
-		add_action( 'admin_menu', array( $this, 'extra_profile_page' ) );
+		add_action( 'admin_menu', array( $this, 'extra_profile_page' ), 20 );
 		add_action('admin_enqueue_scripts', array( $this, "load_scripts" ) );
 	}
 
@@ -123,8 +123,54 @@ class Abbey_Author_Profile {
 		}
 	}
 
+	function create_repeater_fields(){
+		$this->current_user = wp_get_current_user();
+
+		if( empty( $this->options ) )
+			$this->options = get_user_meta( $this->current_user->ID, $this->prefix."_options", true );
+
+		if( !empty( $this->options[ "repeater" ] ) ){
+			foreach( $this->options[ "repeater" ] as $key => $repeaters ){
+				$clone_section = $key; 
+				$clone_fields = array();
+				$current_field = array();
+				
+				if( count( $repeaters ) > 1 ){
+					foreach( $repeaters as $no => $fields ){
+						$no  = (int) $no;
+						if( $no === 0 ){
+							foreach( $fields as $key => $field ){
+								if( array_key_exists( $key, $this->fields ) ){
+									$clone_fields[ $key ] = $this->fields[ $key ];
+								}
+							}
+							continue;
+						}
+						elseif( $no > 0 && !empty( $clone_fields ) ){
+							foreach( $fields as $key => $field ){
+								if( array_key_exists( $key, $clone_fields ) ){
+									$current_field = $clone_fields[ $key ];
+									$current_field[ "id" ] = $current_field[ "id" ]."_".$no;
+									$current_field[ "args" ][ "key" ] = $current_field[ "args" ][ "key" ]."_".$no;
+									$current_field[ "args" ][ "repeater_no" ] = $no;
+									$current_field[ "args" ][ "name" ] = $this->prefix."_options[repeater][".
+										$clone_section."][".
+										$no."][".
+										$current_field["id"]."]";
+									$this->fields[ $current_field[ "id" ] ] = $current_field;
+								}
+							}
+						}
+
+						$this->message = $clone_fields;		
+					}
+				}
+			}//end foreach options[repeater]//
+		}//endif empty $options"repeater"//
+	}
+
 	public function init(){
-		add_action('admin_init', array( $this, 'extra_profile_init' ) );
+		add_action('admin_init', array( $this, 'extra_profile_init' ), 10 );
 	}
 
 	
@@ -140,7 +186,7 @@ class Abbey_Author_Profile {
 
 	function profile_page(){ 
 		$this->current_user = wp_get_current_user();
-
+		
 		if( empty( $this->options ) )
 			$this->options = get_user_meta( $this->current_user->ID, $this->prefix."_options", true );
 
@@ -183,6 +229,7 @@ class Abbey_Author_Profile {
 		} //end if //
 
 		if( count( $this->fields ) > 0 ){
+			$this->create_repeater_fields();
 			foreach( $this->fields as $field ){
 				$f_section = str_ireplace( "_section", "", $field[ "section" ] );
 				$field[ "callback" ] = !empty( $field[ "callback" ] ) ? $field[ "callback" ] :
@@ -196,6 +243,7 @@ class Abbey_Author_Profile {
 								ltrim( "[".$f_section."][".$args[ 'key' ]."]", "_" );
 
 				$field[ "args" ] = wp_parse_args( $field[ "args" ], $args );
+
 
 				add_settings_field(
 					$this->prefix."_".ltrim( $field["id"], "_" ),
