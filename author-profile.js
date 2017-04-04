@@ -103,9 +103,9 @@
         } ); 
          
         repeatElem.after(newElem); 
-            newElem.find( "input" ).filter( ":first" ).focus(); 
+        newElem.find( "input" ).filter( ":first" ).focus(); 
  
-            addButtons(); 
+        addButtons(); 
  
       }); 
  

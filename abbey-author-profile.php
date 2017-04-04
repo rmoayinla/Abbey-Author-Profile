@@ -301,7 +301,7 @@ class Abbey_Author_Profile {
 	}
 
 	function process_form(){
-		if( !isset( $_POST[ "action" ] ) || !check_admin_referer( $this->page."-options" ) )
+		if( !isset( $_POST[ "action" ] )  )
 			return; 
 		
 		require_once( plugin_dir_path( __FILE__ )."profile-options.php" );
