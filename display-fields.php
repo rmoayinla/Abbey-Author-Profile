@@ -2,6 +2,7 @@
 class Abbey_Profile_Field {
 	private $options = array();
 	private $data_json = array();
+	
 	function __construct( $options, $json ){
 		if( is_array( $options ) && count( $options ) > 0 )
 			$this->options = $options;
