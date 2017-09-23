@@ -1,26 +1,72 @@
 <?php
-/*
-* Plugin Name: Abbey Author Profile
-* Description: Customize author contact information and Avatar
-* Author: Rabiu Mustapha
-* Version: 0.1
-* Text Domain: abbey-author-profile
-
+/**
+ * Plugin Name: Abbey Author Profile
+ * Description: Customize author contact information and Avatar
+ * Author: Rabiu Mustapha
+ * Version: 0.1
+ * Text Domain: abbey-author-profile
+ *
+ *
+ * A wordpress plugin for creating a profile page for site authors 
+ * extensive use of wp user metas to add additional user info e.g. contact address, phone no, state, l.g.a etc
+ * create an admin page of editing user profile info and a frontend page for displaying the user profile 
+ *
+ *
 */
 
 class Abbey_Author_Profile {
+	
+	/**
+	 * User meta information for the current user 
+	 *@var: array 
+	 */
 	private $options = array(); 
+
+	/**
+	 * Collection of fields for the admin user profile page 
+	 * @var: array 
+	 */
 	private $fields = array();
+
+	/**
+	 * Collection of section for fields of admin user profile page 
+	 *@var: array
+	 */
 	private $sections = array();
+
+	/**
+	 * JSON data needed for loading some field content 
+	 *@var: array 
+	 */
 	private $data_json = array();
 
+	/**
+	 * A reference to the user profile admin page 
+	 *@var: null 
+	 */
+	private $page = null;
 
-	private $page = "";
+	/**
+	 * A prefix to be used when storing user meta options to the database
+	 *@var: 	string 
+	 */
 	private $prefix = "";
+
 	private $admin_page = "";
-	private $current_user = "";
+
+	/**
+	 * An instance of worpress WP_User class containing data of the current logged in user 
+	 *@var: null 
+	 */
+	private $current_user = null;
+
 	private $message = "";
 
+	/**
+	 * Constructor method: called when the class is instantiated 
+	 * Add/setup default values for some properties and add some wp action hooks 
+	 * @param: Abbey_Json $data 		an instance of Abbey_Json class 
+	 */
 	function __construct( Abbey_Json $data ){
 		
 
@@ -42,59 +88,124 @@ class Abbey_Author_Profile {
 			"callback" => "sanitize_text", "type" => "text" )
 		);
 
-		
+		//populate the $data_json property with get_data from the passed $data class //
 		$this->data_json = $data->get_data();
 		
+		//hook to admin_init to process form information, here the form is validated and updated //`
 		add_action('admin_init', array( $this, 'process_form' ) );
 
 		
 	}
 
+	/**
+	 * Setup the Admin page for the user profile
+	 * Hooks to wp admin_menu to add a User profile menu and admin_enqueue to enqueue styles for the menu page
+	 */
 	function setup_admin_page(){
 		add_action( 'admin_menu', array( $this, 'extra_profile_page' ), 20 );
 		add_action('admin_enqueue_scripts', array( $this, "load_scripts" ) );
 	}
 
 	
-
+	/**
+	 * Add sections to the $sections property 
+	 * this method is used to add different sections to the user profile page
+	 * sections are not yet added to the page here, they are only added to the class $section property 
+	 */
 	function add_section ( $sections ){
-		if( empty( $sections ) || !is_array( $sections ) )
-			return; 
+		
+		//bail if is not an array that was passed, or its empty //
+		if( !is_array( $sections ) ) return;
+		if( empty( $sections )  ) return; 
 
-		if( count( $sections ) > 0 ){
-			foreach( $sections as $key => $section ){
-				$this->sections[ $key ] = $section; 
-			}
+		foreach( $sections as $key => $section ){
+			$this->sections[ $key ] = $section; 
 		}
 		
 	}
-	function add_field( $fields ){
-		if( empty( $fields ) || !is_array( $fields ) )
-			return; 
 
-		if( count( $fields ) > 0 ){
-			foreach( $fields as $key => $field ){
-				$key = is_int( $key ) ? $field[ "id" ] : $key;
-				$this->fields[ $key ] = $field; 
-			}
+	/**
+	 * Add fields to the $fields property
+	 * this fields will be added to sections where users can enter their info on the user profile admin page
+	 * field can be an input field, select, multi-select, quicktag, checkbox etc 
+	 */
+	function add_field( $fields, $single = false ){
+		
+		//bail if is not an array that was passed or it was an empty array //
+		if( !is_array( $fields ) ) return; 
+		if ( empty( $fields ) ) return;
+
+		if( $single ){
+			$key = is_int( $key ) ? $field[ "id" ] : $key;
+			$this->fields[ $key ] = $fields;
+			return;
+		}
+		/**
+		 * Loop through the fields and add them to the $fields property
+		 * fields are stored as array, with field id as index
+		 */
+		foreach( $fields as $key => $field ){
+			$key = is_int( $key ) ? $field[ "id" ] : $key;
+			$this->fields[ $key ] = $field; 
 		}
 	}
 
 	function add_repeater( $repeaters ){
-		if( empty( $repeaters ) || !is_array( $repeaters ) )
-			return;
+		
+		//bail if the $repeaters is not an array or empty //
+		if ( !is_array( $repeaters ) ) return;
+		if( empty( $repeaters ) ) return;  
+
+		/**
+		 * Loop through the repeaters and start adding the section to $sections property 
+		 * and field to $fields property 
+		 */
 		foreach( $repeaters as $id => $repeater ){
+			//get the $id of each repeater index //
 			$id = is_int( $id ) ? $repeater[ "id" ] : $id;
+			
+			/**
+			 * If the repeater['section'] index is empty or its not yet added to our sections property 
+			 * Get the section and add it to our sections property 
+			 */
 			if( empty( $repeater[ "section" ] ) || empty( $this->sections[ $repeater[ "section" ] ] ) ){
+				
+				//the repeater section id //
 				$repeater[ "section" ] = !empty( $repeater[ "section" ] ) ? $repeater[ "section" ] : $repeater[ "id" ];
+				
+				//repeater section title //
 				$repeater[ "title" ] = !empty( $repeater[ "title" ] ) ? $repeater[ "title" ] : ucwords( $repeater[ "id" ] );
+
+				// generate a section containing the basic info to add a section to the $sections container //
 				$section[ $repeater[ "id" ] ] =  array( "id" => $repeater[ "section" ]."_section", "title" => $repeater[ "title" ] );
-				$this->add_section( $section );
+				
+				$this->add_section( $section ); //add the section of this repeater to our $sections container //
 			}
 
+			/**
+			 * Add fields for the repeaters, fields are gotten from the $repeaters['repeaters'] index 
+			 * the requered indexes for the fields are gotten and added to the $fields container 
+			 */
 			if( !empty( $repeater[ "repeaters" ] ) && is_array( $repeater[ "repeaters" ] ) ){
+				
+				//clone the repeaters index to a var //
 				$fields = $repeater[ "repeaters" ];
+
+				/**
+				 * Since we  got a repeater field, the fields are going to be multiple fields 
+				 * therefore fields are stored in a mutli-dimensional array 
+				 * to add the main fields, we have to loop through the repeaters index
+				 * and then we loop through each repeater field in the index to add to the $field container 
+				 */
 				foreach( $fields as $no => $repeater_field ){
+
+					//skip if the current repeater field is not an array 
+					if( !is_array( $repeater_field ) && empty( $repeater_field ) ) continue;
+
+					/**
+					 * Start the second loop and generate the required info for a field 
+					 * then adds each field to the $fields container 
+					 */
 					foreach( $repeater_field as $key => $field ){
 						$args[ "id" ] =  $this->prefix."_".ltrim( $field[ "id" ], "_" );
 						$args[ "section" ] = $repeater[ "section" ]."_section";
@@ -109,8 +220,10 @@ class Abbey_Author_Profile {
 										$no."][".
 										$field["id"]."]";
 						
-
+						//merge and replace $field['args'] infos i.e field type, name, repeater no etc //
 						$field[ "args" ] = wp_parse_args( $field[ "args" ], $args[ "args" ] );
+
+						//merge and replace $field array with $args i.e. id, section, callback etc //
 						$field = wp_parse_args( $field, $args );
 
 						$this->fields[ $field["id"] ] = $field;
