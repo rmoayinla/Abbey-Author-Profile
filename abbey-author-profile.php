@@ -136,7 +136,7 @@ class Abbey_Author_Profile {
 		if ( empty( $fields ) ) return;
 
 		if( $single ){
-			$key = is_int( $key ) ? $field[ "id" ] : $key;
+			$key = is_int( $key ) ? $fields[ "id" ] : $key;
 			$this->fields[ $key ] = $fields;
 			return;
 		}
@@ -150,6 +150,12 @@ class Abbey_Author_Profile {
 		}
 	}
 
+	/**
+	 * Handles adding sections and fields for repeaters 
+	 * a single or multiple  section are added depending on the section in the $repeaters param 
+	 * multiple fields are added and field infos are generated, these fields are added to $fields property 
+	 *@param: 	array 	$repeaters 		multi-dimensional array of repeater sections and fields 
+	 */
 	function add_repeater( $repeaters ){
 		
 		//bail if the $repeaters is not an array or empty //
@@ -190,7 +196,6 @@ class Abbey_Author_Profile {
 				
 				//clone the repeaters index to a var //
 				$fields = $repeater[ "repeaters" ];
-
 				/**
 				 * Since we  got a repeater field, the fields are going to be multiple fields 
 				 * therefore fields are stored in a mutli-dimensional array 
@@ -226,54 +231,95 @@ class Abbey_Author_Profile {
 						//merge and replace $field array with $args i.e. id, section, callback etc //
 						$field = wp_parse_args( $field, $args );
 
+						//add the field to the $field container //
 						$this->fields[ $field["id"] ] = $field;
 						
-						
-					}
-				}
-			}
+					} //end foreach second loop //
+				} //end foreach first loop //
+			} //end if $repeater['repeaters'] check //
 			
-		}
+		}//end foreach $repeaters loop //
 	}
 
 	function create_repeater_fields(){
+		//get the current user //
 		$this->current_user = wp_get_current_user();
 
+		//populate our options if we havent populate it yet, options are user profile metas //
 		if( empty( $this->options ) )
 			$this->options = get_user_meta( $this->current_user->ID, $this->prefix."_options", true );
 
+		/**
+		 * Grab the repeater index from the user profile metas
+		 * All repeater fields are stored in this index 
+		 * loop through this index and get the fields for the repeaters 
+		 * the repeater fields we are handling here have already been stored in the db
+		 * since these fields are added dynamically by Javascript, we have to do the hardowrk of adding them
+		 * manually to our fields so that they can display
+		 */
 		if( !empty( $this->options[ "repeater" ] ) ){
+			
+			//loop through the repeaters //
 			foreach( $this->options[ "repeater" ] as $key => $repeaters ){
-				$clone_section = $key; 
-				$clone_fields = array();
-				$current_field = array();
 				
+				//the section is the $key, if its a string //
+				$clone_section = $key; 
+
+				//containers for storing the repeater index and fields //
+				$clone_fields = $current_field = array();
+				
+				/**
+				 * the repeater field has to be more than 1
+				 * the first field will already exist in our fields 
+				 * we use the stored info of the first field that exist to generate fields for the other fields
+				 * why we do this is because the other fields were added via javascript 
+				 */
 				if( count( $repeaters ) > 1 ){
+					//loop through the current active repeater index e.g. experience //
 					foreach( $repeaters as $no => $fields ){
-						$no  = (int) $no;
+
+						$no  = (int) $no; //cast the $no to an integer //
+						/** We are at the first field in the repeater, this must exist in our $fields container */
 						if( $no === 0 ){
+							/** 
+							 * Loop through all the $fields and check if it exist in our fields container 
+							 * if it those exist, clone the $field info from the $fields container
+							 * this clone info will be used for creating field info for the remaining repeating options  
+							 */
 							foreach( $fields as $key => $field ){
 								if( array_key_exists( $key, $this->fields ) ){
 									$clone_fields[ $key ] = $this->fields[ $key ];
 								}
 							}
-							continue;
+							continue; // continue the loop to the next index //
 						}
+						/** 
+						 * We are at the other fields that doesnt exist yet, so we have to do the hardowork 
+						 * we check if we have a clone field, then use the clone_field info to generate the
+						 * field info for these ones, these are important for repeater fields to be displayed 
+						 * if we dont do these, only the first field will appear while other repeater fields wont
+						 */
 						elseif( $no > 0 && !empty( $clone_fields ) ){
+
+							//loop through the fields //
 							foreach( $fields as $key => $field ){
+								//if the key exist in $clone_fields, that means we have a template for the repeater//
 								if( array_key_exists( $key, $clone_fields ) ){
+									/** Generate the field name, key, repeater_no and id */
 									$current_field = $clone_fields[ $key ];
-									$current_field[ "id" ] = $current_field[ "id" ]."_".$no;
-									$current_field[ "args" ][ "key" ] = $current_field[ "args" ][ "key" ]."_".$no;
+									$current_field[ "args" ][ "key" ] = $current_field[ "args" ][ "key" ];
 									$current_field[ "args" ][ "repeater_no" ] = $no;
 									$current_field[ "args" ][ "name" ] = $this->prefix."_options[repeater][".
 										$clone_section."][".
 										$no."][".
 										$current_field["id"]."]";
+									$current_field[ "id" ] = $current_field[ "id" ]."_".$no;
+
+									//add each repeater field to our $fields container //	
 									$this->fields[ $current_field[ "id" ] ] = $current_field;
 								}
-							}
-						}
+							}//end foreach loop //
+						}//end elseif $no > 0 //
 
 						$this->message = $clone_fields;		
 					}
@@ -282,6 +328,11 @@ class Abbey_Author_Profile {
 		}//endif empty $options"repeater"//
 	}
 
+	/**
+	 * Initialize the plugin admin page 
+	 * before calling the init method, add sections, fields and repeaters first
+	 * this method adds the sections, fields and prepare the user admin profile page 
+	 */
 	public function init(){
 		add_action('admin_init', array( $this, 'extra_profile_init' ), 10 );
 	}
@@ -297,16 +348,23 @@ class Abbey_Author_Profile {
 										);
 	}
 
+	/**
+	 * Callback method that displays the markup for the admin profile page
+	 * the fields and sections are generated here including all other hidden form fields
+	 */
 	function profile_page(){ 
-		$this->current_user = wp_get_current_user();
+		//get the current user info if its empty //
+		if( empty( $this->current_user ) ) $this->current_user = wp_get_current_user();
 		
+		//populate the options if its empty //
 		if( empty( $this->options ) )
 			$this->options = get_user_meta( $this->current_user->ID, $this->prefix."_options", true );
 
 		 ?>
+		<!-- Markup of the profile page -->
 		<div class="wrap">
 			<?php screen_icon(); ?>
-			<h2>Abbey Author Profile: <?php  echo $this->current_user->display_name; ?></h2>
+			<h2><?php esc_html_e( sprintf( ' Abbey Author Profile: %s ', $this->current_user->display_name ) ); ?></h2>
 			<form action='' method='post' id="profile-form">
 				<?php settings_fields( $this->page ); ?>
 				<?php do_settings_sections( $this->page );?>
@@ -316,7 +374,6 @@ class Abbey_Author_Profile {
 				
 				<?php submit_button();
 				print_r( $this->options );
-				print_r( $this->message );
 				?>
 			</form>	
 		</div>	<?php
@@ -324,14 +381,22 @@ class Abbey_Author_Profile {
 
 	}
 
+	/**
+	 * Runs through the $sections and $fields properties and add them to the page
+	 */
 	function extra_profile_init(){
+		//register settings, using Wp Settings API //
 		register_setting( $this->page, $this->prefix."_options" );
 
+		/** Add all sections that have been added to $sections container */
 		if( count ( $this->sections ) > 0 ){
+			
 			foreach( $this->sections as $section ){
-				if( empty( $section[ "callback" ] ) )  
-					$section[ "callback" ] = array( $this, "author_main_section" );
 				
+				//add a default section callback if none is specified //
+				if( empty( $section[ "callback" ] ) ) $section[ "callback" ] = array( $this, "author_main_section" );
+				
+				//actual adding of section per WP Settings API //
 				add_settings_section( 
 					$this->prefix."_".ltrim( $section["id"], "_" ),
 					$section["title"], 
@@ -341,6 +406,7 @@ class Abbey_Author_Profile {
 			}
 		} //end if //
 
+		/** Add all fields that have been added to $fields container */
 		if( count( $this->fields ) > 0 ){
 			$this->create_repeater_fields();
 			foreach( $this->fields as $field ){
@@ -368,8 +434,6 @@ class Abbey_Author_Profile {
 				);
 			}
 		}//endif//
-
-		
 
 	}
 
