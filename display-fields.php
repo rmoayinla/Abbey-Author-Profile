@@ -1,8 +1,37 @@
 <?php
+/**
+ * Display fields where user can update their profile meta information 
+ *
+ *
+ * these fields are used by WP Settings API in displaying the Abbey Author Profile page
+ * fields are generated according to the input type i.e. text, date, search, multi-select, dropdown etc
+ * supports repeater fields 
+ * stored values of each field are populated and styling and JS classes and attributes are added 
+ * the fields are in HTML5 format 
+ *
+ *@package: Abbey Author Profile wp plugin 
+ *@author: Rabiu Mustapha 
+ *
+ */
+
 class Abbey_Profile_Field {
+
+	/**
+	 * Data container storing the options that will be used to populate field values 
+	 *@var: array 
+	 */
 	private $options = array();
+
+	/**
+	 * Json data container datas that will be used to populate some fields dynamically 
+	 *@var: array
+	 */
 	private $data_json = array();
 	
+	/**
+	 * Constructor 
+	 *populate properties i.e. both data containers 
+	 */
 	function __construct( $options, $json ){
 		if( is_array( $options ) && count( $options ) > 0 )
 			$this->options = $options;
@@ -169,17 +198,24 @@ class Abbey_Profile_Field {
 		
 		$field .= "</fieldset>";
 
-		echo $field; print_r( $args );
+		echo $field; print_r( $args );;
 	}
 
-	function get_field_value( $section_key, $key, $options ){
-		if( array_key_exists( $section_key, $options ) ){
+	/**
+	 * Populate value of fields that already have some existing data 
+	 * fields that have values previously stored are prefilled so that they can be updated
+	 *@return: 	mixed 		depending on if the value is found 
+	 */
+	private function get_field_value( $section_key, $key = "", $options ){
+		if( !array_key_exists( $section_key, $options ) ){
+			if( in_array( $section_key, $options ) )
+		}
 			$section = $options[ $section_key ];
 			if( is_array( $section ) )
-				return !empty( $section[ $key ] ) ? $section[ $key ] : "";
+				return !empty( $section[ $key ] ) ? $section[ $key ] : var_export( $section );
 		}
 		return "";
-	}
+	
 
 	
 }
