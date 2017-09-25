@@ -370,6 +370,7 @@ class Abbey_Author_Profile {
 
 				<input type="hidden" name="<?php echo $this->prefix."_options[user_id]"; ?>" 
 				value="<?php echo $this->current_user->ID; ?>" /> 
+				<?php wp_nonce_field( 'update', $this->page ); ?>
 				
 				<?php submit_button();
 				print_r( $this->options );
@@ -515,8 +516,8 @@ class Abbey_Author_Profile {
 	 * saving of entered data are handled by the plugin not wp 
 	 */
 	function process_form(){
-		if( !isset( $_POST[ "action" ] )  )
-			return; 
+		if( !isset( $_POST[ "action" ] )  ) return;
+
 		//include the file responsible for handling the form //
 		require_once( plugin_dir_path( __FILE__ )."profile-options.php" );
 	}
@@ -525,12 +526,14 @@ class Abbey_Author_Profile {
 }
 
 add_filter( "abbey_author_profile_json_data", function( $data ) {
-		$data["state"]["Nigeria"] = array( "Lagos", "Ogun", "Osun", "Oyo", "Osun", "Edo", "Kwara" );
+		$data["state"]["Nigeria"] = array( "Lagos", "Ogun", "Osun", "Oyo", "Benue", "Edo", "Kwara", "Rivers" );
 		$data["state"]["South Africa"] = array( "Cape Town", "Johannesburg" );
 		$data["state"][ "Ghana" ] = array( "Accra", "Kumasi" );
+		$data[ "state" ][ "Togo" ] = array( "Lome" );
 		return $data;
 });
 
+require_once( plugin_dir_path( __FILE__ )."includes/functions.php" );
 require_once( plugin_dir_path( __FILE__ )."abbey-json.php" );
 require_once( plugin_dir_path( __FILE__ )."profile-fields.php" );
 
