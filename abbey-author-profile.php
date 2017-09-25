@@ -44,6 +44,8 @@ class Abbey_Author_Profile {
 	 * A reference to the user profile admin page 
 	 *@var: null 
 	 */
+	private $admin_page = "";
+
 	private $page = null;
 
 	/**
@@ -51,8 +53,6 @@ class Abbey_Author_Profile {
 	 *@var: 	string 
 	 */
 	private $prefix = "";
-
-	private $admin_page = "";
 
 	/**
 	 * An instance of worpress WP_User class containing data of the current logged in user 
@@ -69,7 +69,6 @@ class Abbey_Author_Profile {
 	 */
 	function __construct( Abbey_Json $data ){
 		
-
 		$this->page = "abbey_author_profile";
 		$this->prefix = "abbey_author_profile"; 
 
@@ -408,11 +407,21 @@ class Abbey_Author_Profile {
 
 		/** Add all fields that have been added to $fields container */
 		if( count( $this->fields ) > 0 ){
+
+			//first add the repeater fields in the user profile meta to $fields container  //
+			//this is important, so that users can view and edit infos in repeater fields //
 			$this->create_repeater_fields();
+
+			//now loop through the $fields container //
 			foreach( $this->fields as $field ){
+				//the field  section //
 				$f_section = str_ireplace( "_section", "", $field[ "section" ] );
+
+				// the field callback, set a default if none is set //
 				$field[ "callback" ] = !empty( $field[ "callback" ] ) ? $field[ "callback" ] :
 										"author_profile_fields";
+				
+				/** default field args e.g. key, sanitize callback, name etc */
 				$args["type"] = "text";
 				$args[ "id" ] =  $this->prefix."_".ltrim( $field[ "id" ], "_" );
 				$args[ "key" ] = $field[ "id" ];
@@ -421,9 +430,10 @@ class Abbey_Author_Profile {
 				$args[ "name" ] = $this->prefix."_options".
 								ltrim( "[".$f_section."][".$args[ 'key' ]."]", "_" );
 
+				//merge and replace the default $args with actual $field args //
 				$field[ "args" ] = wp_parse_args( $field[ "args" ], $args );
 
-
+				//add the field per WP Settings API //
 				add_settings_field(
 					$this->prefix."_".ltrim( $field["id"], "_" ),
 					$field["title"], 
@@ -437,32 +447,52 @@ class Abbey_Author_Profile {
 
 	}
 
+	/** 
+	 * Default callback function for displaying sections 
+	 */
 	function author_main_section(){	
 		echo sprintf( '<p>%s</p>', __( "This belongs to a section", "abbey-author-profile" ) );
 	 
 	}
 
+	/**
+	 * Default callback function for displaying fields 
+	 */
 	function author_profile_fields( $args ){
+		// include the class responsible for generating fields //
 		require_once( plugin_dir_path( __FILE__ )."display-fields.php" );
+
+		//instantiate the class and pass the user options and the data //
 		$field = new Abbey_Profile_Field( $this->options, $this->data_json ); 
+
+		//display the fields with the $args receieved from WP Setttings API //
 		$field->display_field( $args );
 	}
 
 	function load_scripts( $hook ){
-		if( $hook !== $this->admin_page )
-			return; 
 
+		//bail if we are not on the user profile admin  page //
+		if( $hook !== $this->admin_page ) return; 
+
+		//enqueue plugin styles for styling the profile admin page //
 		wp_enqueue_style( 'author-profile-css', plugin_dir_url( __FILE__ )."/author-profile.css"  );
+
+		//enqueue jquery core css, required for datepicker //
 		wp_enqueue_style( 'jquery-core-css', "//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" );
+
+		//enqueue css for quicktag jquery plugin //
 		wp_enqueue_style( 'tag-css', plugin_dir_url( __FILE__ )."libs/quicktags/jquery.tag-editor.css"  );
 
+		/** Enqueue js for our tag script, depends on caret-script */
 		wp_enqueue_script( "caret-script", plugin_dir_url( __FILE__ )."/libs/quicktags/jquery.caret.min.js", array( "jquery" ), "", true );
 		wp_enqueue_script( "tag-script", plugin_dir_url( __FILE__)."/libs/quicktags/jquery.tag-editor.min.js", 
 							array( "jquery"), "", true );
 		
+		//enqueue plugin javascript //
 		wp_enqueue_script( "author-profile-script", plugin_dir_url( __FILE__ )."author-profile.js", 
 							array( "jquery"), 1.0, true );
 
+		/** Enqueue some Jquery scripts that are bundled with wordpress */
 		wp_enqueue_script( "jquery-ui-core" );
 		wp_enqueue_script( "jquery-ui-widget" );
 		wp_enqueue_script( "jquery-ui-widget" );
@@ -470,6 +500,7 @@ class Abbey_Author_Profile {
 		wp_enqueue_script( "jquery-ui-position" );
 		wp_enqueue_script( "jquery-ui-datepicker" );
 
+		//send the json data to Javascript so that it can be used in our page //
 		wp_localize_script( "author-profile-script", "abbeyAuthorProfile", 
 			array(
 				"data_json" => $this->data_json
@@ -477,10 +508,16 @@ class Abbey_Author_Profile {
 		);
 	}
 
+	/**
+	 * Handles processing the form when submitted 
+	 * Had to do the form processing myself because the Settings API saves the Options table
+	 * unfortunately the info i want to save need to be User_meta table
+	 * saving of entered data are handled by the plugin not wp 
+	 */
 	function process_form(){
 		if( !isset( $_POST[ "action" ] )  )
 			return; 
-		
+		//include the file responsible for handling the form //
 		require_once( plugin_dir_path( __FILE__ )."profile-options.php" );
 	}
 
