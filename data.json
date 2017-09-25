@@ -1,18 +1,14 @@
 {
-    "country": [
-        "Nigeria",
-        "Ghana",
-        "South Africa"
-    ],
     "state": {
         "Nigeria": [
             "Lagos",
             "Ogun",
             "Osun",
             "Oyo",
-            "Osun",
+            "Benue",
             "Edo",
-            "Kwara"
+            "Kwara",
+            "Rivers"
         ],
         "South Africa": [
             "Cape Town",
@@ -21,11 +17,14 @@
         "Ghana": [
             "Accra",
             "Kumasi"
+        ],
+        "Togo": [
+            "Lome"
         ]
     },
-    "lga": {
-        "Nigeria": {
-            "lagos": []
-        }
-    }
+    "country": [
+        "Nigeria",
+        "Ghana",
+        "South Africa"
+    ]
 }
