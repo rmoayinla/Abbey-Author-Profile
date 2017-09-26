@@ -28,17 +28,48 @@ class Abbey_Profile_Field {
 	 */
 	private $data_json = array();
 
+	/**
+	 * ID attribute of this field 
+	 *@var: string 
+	 */
 	private $field_id = '';
 
+	/**
+	 * Type attribute of this field
+	 *@var: string 
+	 *@default: text 
+	 */
 	private $field_type = 'text';
 
+	/**
+	 * Class attribute of this field 
+	 *@var: array
+	 */
 	private $field_class = [];
 
+	/**
+	 * Additional attributes of this field excluding id, name, class and type 
+	 *@var: string 
+	 */
 	private $field_attributes = '';
 
+	/**
+	 * Name attribute of this field 
+	 *@var: string 
+	 */
 	private $field_name = '';
 
+	/**
+	 * Current field value that have been saved for this user 
+	 *@var: string 
+	 */
 	private $field_value = '';
+
+	/**
+	 * Full HTML5 markup of the field including attributes, class, id and type 
+	 *@var: string 
+	 */
+	private $field_html = '';
 	
 	/**
 	 * Constructor 
@@ -50,6 +81,10 @@ class Abbey_Profile_Field {
 		$this->data_json = $json;
 	}
 
+	/**
+	 * Display the current field i.e. select, input, textarea 
+	 *@param: $args 	array 		the field arguments from Settings API 
+	 */
 	public function display_field( $args ){
 		$field = $value = $name = $id = $attributes = $class ="";
 		$name = $args[ "name" ]; 
@@ -304,24 +339,127 @@ class Abbey_Profile_Field {
 		return "";
 	}
 
-	function input_field(){
-		 $field .= sprintf( '<input type="%1$s" name="%2$s" value="%3$s" id="%4$s" class="%5$s" %6$s />', 
-						esc_attr( $args["type"] ), 
-						esc_attr( $name ), 
-						$value, 
-						esc_attr( $id ), 
-						esc_attr( implode( $class, " " ) ),
-						$attributes
+	function input_field( $args ){
+		return sprintf( '<input type="%1$s" name="%2$s" value="%3$s" id="%4$s" class="%5$s" %6$s />', 
+						esc_attr( $this->field_type ), 
+						esc_attr( $this->field_name ), 
+						$this->field_value, 
+						esc_attr( $this->field_id ), 
+						esc_attr( implode( $this->field_class, " " ) ),
+						$this->field_attributes
 
 					);
 	}
 
-	function select_field(){
+	function select_field( $args ){
+		$field .= sprintf( '<select id="%1$s" name="%2$s" class="%3$s" %4$s>', 
+								esc_attr( $this->field_id ), 
+								esc_attr( $this->field_name ), 
+								esc_attr( implode( $this->field_class, " " ) ), 
+								$this->field_attributes
+						);
+		//datas that should be populated dynamically from $data_json container // 
+		$respond_data = array();
+		//our select choices/options //
+		$choices = !empty( $args[ "choices" ] ) ? $args[ "choices" ] : array();
+		
+		//if we have a data-json index in our $args, we populate our choices dynamically //
+		if( !empty( $args[ "attributes" ][ "data-json" ] )  ){
 
+			//now check if the data-json index has a key in our data_json property //
+			if(  !empty( $this->data_json[ $args[ "attributes" ][ "data-json" ] ] ) ) 
+			{
+				//copy the data to choices from our data_json property //
+				$choices = $this->data_json[ $args[ "attributes" ][ "data-json" ] ];
+
+				//check if we have a data-respond attributes set and the data-respond exist in our $data_json property //
+				if( !empty( $args[ "attributes" ][ "data-respond" ] ) && 
+					!empty( $this->data_json[ $args[ "attributes" ][ "data-respond" ] ] ) 
+				){
+					//get the value of the data-respond field from our saved options //
+					$respond_data = $this->get_field_value( $args[ "section_key" ], 
+														$args[ "attributes" ][ "data-respond" ], 
+														$this->options 
+													);
+					//if we got a value, check if it exists in our choices and populate accordingly //
+					$choices = 	( !empty( $respond_data ) && !empty( $choices[ $respond_data ] ) ) ? 
+								$choices[ $respond_data ] : 
+								array();
+				}//end if empty check for data-respond //
+
+			}//end if empty( $this->data_json[ $args[ "attributes" ] ] )//
+				
+		}//end if data-json //
+		
+		//if we dont have any $choices/options for select field, add others and return field // 
+		if( empty( $choices ) ){
+			if( !empty( $args[ "others" ] ) )   
+				$field .= sprintf( '<option value="" class="select-others" %1$s>%2$s</option>', 
+									selected( $this->field_value, "", false ),
+									__( "Others:", "abbey-author-profile" ) 
+								);
+			$field .= "</select>";
+			return $field;
+		}
+		
+		/** if for some reason the field value is not present in our choices array, add it */
+		if( !empty( $this->field_value ) && 
+			!in_array( $this->field_value, $choices ) &&
+			!array_key_exists( $this->field_value, $choices )  && 
+			empty( $args[ "attributes" ][ "data-json" ] ) 
+		)
+			$choices[ $this->field_value ] = $this->field_value;
+		
+		foreach ( $choices as $key => $choice ){
+			//if the current choice is an array, dont flatten just use the $key instead //
+			if( is_array( $choice ) ) $choice = $key;
+
+			//use $keys as values except if $key is an integer //
+			$option_value = is_int( $key ) ? $choice : $key; 
+
+			$field .= sprintf( '<option value="%1$s" %2$s >%3$s</option>', 
+								esc_attr( $option_value ), 
+								selected( $this->field_value, $option_value, false ), 
+								esc_html( $choice )
+							);
+		}//end foreach loop $choices //
+
+		if( !empty( $args["others"] ) )
+			$field .= sprintf( '<option value="" class="select-others" %1$s>%2$s</option>', 
+								selected( $this->field_value, "", false ),
+								__( "Others:" ) 
+							);
+
+		$field .= "</select>";
+			
 	}
 
 	function textarea_field(){
 
+	}
+
+	function radio_check_field( $args ){
+		$choices = $args[ "choices" ];
+
+		//bail if our $choices is not an array or empty //
+		if( !is_array( $choices ) || empty( $choices ) ) return;
+		
+		$field .= sprintf( '<p class="%s">', esc_attr( implode( $args[ "type" ], " " ) ) );
+		//loop through our choices //
+		foreach( $choices as $key => $choice ){
+			//clone our label from $key or $choice //
+			$label = is_int( $key ) ? $choice : $key;
+
+			$field .= sprintf( '<label><input type="%1$s" name="%2$s" value="%3$s" id="%4$s" %5$s %6$s /> %7$s</label>', 
+								esc_attr( $args["type"] ), 
+								esc_attr( $name ), 
+								$choice, 
+								esc_attr( $id ), 
+								checked( $value, $choice, false ),
+								$attributes,
+								esc_html( $label )
+			);
+		}
 	}
 	
 
