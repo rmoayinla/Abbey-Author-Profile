@@ -6,7 +6,7 @@
  * these fields are used by WP Settings API in displaying the Abbey Author Profile page
  * fields are generated according to the input type i.e. text, date, search, multi-select, dropdown etc
  * supports repeater fields 
- * stored values of each field are populated and styling and JS classes and attributes are added 
+ * stored values of each field are populated, styling and JS classes and attributes are added 
  * the fields are in HTML5 format 
  *
  *@package: Abbey Author Profile wp plugin 
@@ -86,179 +86,52 @@ class Abbey_Profile_Field {
 	 *@param: $args 	array 		the field arguments from Settings API 
 	 */
 	public function display_field( $args ){
-		$field = $value = $name = $id = $attributes = $class ="";
-		$name = $args[ "name" ]; 
-		$id = $args[ "id" ];
-		$field = "<fieldset>";
-		$args[ "attributes" ][ "data-name" ] = $name;
-	
+				
 		
+		$this->field_attributes( $args );
+
 		
-		if( empty( $args[ "repeater_key" ] ) && empty( $args[ "repeater_no" ] )  ){
-			$value = $this->get_field_value( $args[ "section_key" ], $args[ "key" ], $this->options );
-		}
-		elseif( !empty( $args[ "repeater_key" ] ) ) {
-			if( !empty ( $this->options[ "repeater" ][ $args[ "repeater_key" ] ] ) ){
-				$repeater = $this->options[ "repeater" ][ $args[ "repeater_key" ] ];
-				if( is_array( $repeater ) && array_key_exists( $args[ "repeater_no" ], $repeater ) )
-					$value = $this->get_field_value( $args[ "repeater_no" ], $args[ "key" ], $repeater );
-			}
-			$args[ "attributes" ][ "data-repeater" ] = $args[ "repeater_no" ];
-		}
-
-		if( !empty( $args[ "attributes" ] ) ){
-			$class= ( !empty( $args[ "attributes" ][ "class" ] ) )  ? $args[ "attributes" ][ "class" ] : array();
-			$class[] = "profile-".esc_attr( $args[ "key" ] );
-			if( !empty( $args[ "repeater_key" ] ) || !empty( $args[ "repeater_no" ] ) )
-				$class[] = "repeater-group";
-
-			if( !empty( $args[ "attributes" ][ "class" ] ) )
-				unset( $args[ "attributes" ][ "class" ] );
-
-			foreach( $args[ "attributes" ] as $attribute => $attr_value ){
-				if( is_array( $attr_value ) )
-					$attributes .= sprintf('%1$s="%2$s"', $attribute, esc_attr( implode( $attr_value, " " ) ) );
-				else
-					$attributes .= sprintf('%1$s="%2$s"', $attribute, esc_attr( $attr_value ) );
-			}
-		}
-
-		//******************** start creating fields based on $args["type"]*********//
-
-		//*********** if its type= text or number or date *****************//
 		if( in_array( $args[ "type" ], [ "text", "number", "date" ] ) ){
-		 $field .= sprintf( '<input type="%1$s" name="%2$s" value="%3$s" id="%4$s" class="%5$s" %6$s />', 
-						esc_attr( $args["type"] ), 
-						esc_attr( $name ), 
-						$value, 
-						esc_attr( $id ), 
-						esc_attr( implode( $class, " " ) ),
-						$attributes
-
-					);
+		 $this->field_html .= $this->input_field( $args );
 		}
-		//******** end check for text, number and date ************** //
+		
 
 		elseif( $args[ "type" ] === "select" ){
-			$field .= sprintf( '<select id="%1$s" name="%2$s" class="%3$s" %4$s>', 
-								esc_attr( $id ), 
-								esc_attr( $name ), 
-								esc_attr( implode( $class, " " ) ), 
-								$attributes
-							 ); 
-			$respond_data = array();
-			$choices = !empty( $args[ "choices" ] ) ? $args[ "choices" ] : array();
-
-			if( !empty( $args[ "attributes" ][ "data-json" ] )  ){
-				
-				if( !empty( $args[ "attributes" ][ "data-json" ] ) && 
-					!empty( $this->data_json[ $args[ "attributes" ][ "data-json" ] ] ) 
-				){
-					//{ "states" : {} } //
-					$choices = $this->data_json[ $args[ "attributes" ][ "data-json" ] ];
-					if( !empty( $args[ "attributes" ][ "data-respond" ] ) && 
-						!empty( $this->data_json[ $args[ "attributes" ][ "data-respond" ] ] ) 
-					){
-						$respond_data = $this->get_field_value( $args[ "section_key" ], 
-															$args[ "attributes" ][ "data-respond" ], 
-															$this->options 
-														);
-						$choices = ( !empty( $respond_data ) && !empty( $choices[ $respond_data ] ) ) ? 
-								$choices[ $respond_data ] : array();
-					} 
-				}
-				
-				
-
-					
-			}
-			//======= end if ( $args["attributes"]["data-json"] ) ============ //
-
-			if( !empty( $choices ) ){
-				if( !empty( $value ) && 
-					!in_array( $value, $choices ) &&
-					!array_key_exists( $value, $choices )  && 
-					empty( $args[ "attributes" ][ "data-json" ] ) 
-				){
-					$choices[ $value ] = $value;
-				}
-				foreach ( $choices as $key => $choice ){
-					if( is_array( $choice ) )
-						$choice = $key;
-					$option_value = is_int( $key ) ? $choice : $key; 
-					$field .= sprintf( '<option value="%1$s" %2$s >%3$s</option>', 
-										esc_attr( $option_value ), 
-										selected( $value, $option_value, false ), 
-										$choice
-									 );
-				}
-			} //endif empty choices  //
-			if( !empty( $args["others"] ) )
-				$field .= sprintf( '<option value="" class="select-others" %1$s>%2$s</option>', 
-									selected( $value, "", false ),
-									__( "Others" ) 
-								);
-
-			$field .= "</select>";
-		}
-		// ************  end if type === select ****************** //
-		elseif( in_array( $args[ "type" ], [ "radio", "checkbox" ] ) ){
-			$choices = $args[ "choices" ];
-			if( is_array( $choices ) && !empty( $choices ) )
-				$class[] = $args[ "type" ];
-
-				$field .= sprintf( '<p class="%s">', esc_attr( implode( $class, " " ) ) );
-				foreach( $choices as $key => $choice ){
-					$label = is_int( $key ) ? $choice : $key;
-					$field .= sprintf( '<label>
-										<input type="%1$s" name="%2$s" value="%3$s" id="%4$s" %5$s %6$s />
-										%7$s
-										</label>', 
-										esc_attr( $args["type"] ), 
-										esc_attr( $name ), 
-										$choice, 
-										esc_attr( $id ), 
-										checked( $value, $choice, false ),
-										$attributes,
-										esc_html( $label )
-
-					);
-				}
-		}
-		//************* end if radio and checkbox ************** //
-		elseif( $args[ "type" ] === "textarea" ){
-			if( empty( $args[ "attributes" ][ "rows" ] ) )
-				$attributes .= " rows='10' ";
-			if( empty( $args[ "attributes" ][ "cols" ] ) )
-				$attributes .= " cols='20' ";
-			
-			$field .= sprintf( '<textarea class="%1$s" name="%2$s" value="%3$s" id="%4$s" %5$s></textarea>', 
-								esc_attr( implode( $class, " " ) ),
-								esc_attr( $name ), 
-								esc_attr( $value ), 
-								esc_attr( $id ), 
-								$attributes
-								 );
-
+			$this->field_html .= $this->select_field( $args );
 		}
 		
-		$field .= "</fieldset>";
+		elseif( in_array( $args[ "type" ], [ "radio", "checkbox" ] ) ){
+			$this->field_html .= $this->radio_check_field( $args );
+		}
+		
+		elseif( $args[ "type" ] === "textarea" ){
+			$this->field_html .= $this->textarea_field( $args );
+		}
+		
+		$this->field_html .= "</fieldset>";
 
-		echo $field; print_r( $args );;
+		echo $this->field_html;
+
 	}
 
-	private function create_attributes( $args ){
+	private function field_attributes( $args ){
 		//set the id attribute of the field //
-		if( !empty( $args[ "id" ] ) $this->field_id = $args[ "id" ];
+		if( !empty( $args[ "id" ] ) ) $this->field_id = $args[ "id" ];
 		
 		//set the name attribute //
-		if( !empty( $args[ "name" ] ) $this->field_name = $args[ "name" ];
+		if( !empty( $args[ "name" ] ) ) $this->field_name = $args[ "name" ];
 		
 		//set the data-name attributes, used in JS //
 		$args[ "attributes" ][ "data-name" ] = $this->field_name;
 		
 		//add profile-$key to class attributes for fields //
 		if( !empty( $args[ "key" ] ) ) $this->field_class[] = "profile-".esc_attr( $args[ "key" ] );
+
+		//add type-field class attributes for fields and set the field_type property //
+		if( !empty( $args[ "type" ] ) ){
+			$this->field_type = $args[ "type" ];
+			$this->field_class[] = esc_attr( $args[ "type" ] )."-field";
+		}
 
 		//if we are not in a repeater, get the value attribute from our options  //
 		if( !$this->is_repeater( $args ) ){
@@ -293,10 +166,10 @@ class Abbey_Profile_Field {
 
 		//loop and add our remaining attributes e.g. col, row, data-name etc //
 		foreach( $args[ "attributes" ] as $attribute => $attr_value ){
-			if( is_array( $attr_value ) )
-				$this->field_attributes .= sprintf('%1$s="%2$s"', $attribute, esc_attr( implode( $attr_value, " " ) ) );
-			else
-				$this->field_attributes .= sprintf('%1$s="%2$s"', $attribute, esc_attr( $attr_value ) );
+			//flatten the attributes if we have an array //
+			if( is_array( $attr_value ) ) $attr_value = implode( $attr_value, " " );
+				
+			$this->field_attributes .= sprintf('%1$s="%2$s"', $attribute, esc_attr( $attr_value ) );
 		}
 		
 
@@ -339,6 +212,12 @@ class Abbey_Profile_Field {
 		return "";
 	}
 
+	/**
+	 * Create an input type field
+	 * the input type is text, date, search, number 
+	 *@param: $args 	array 		field arguments from WP Settings API 
+	 *@return: 			string 		an HTML input field
+	 */
 	function input_field( $args ){
 		return sprintf( '<input type="%1$s" name="%2$s" value="%3$s" id="%4$s" class="%5$s" %6$s />', 
 						esc_attr( $this->field_type ), 
@@ -347,21 +226,28 @@ class Abbey_Profile_Field {
 						esc_attr( $this->field_id ), 
 						esc_attr( implode( $this->field_class, " " ) ),
 						$this->field_attributes
-
 					);
 	}
 
+	/**
+	 * Create a select field type 
+	 * select field have dropdown options where users can pick from 
+	 *@param: $args 	array 	field arguments from WP Settings API 
+	 *@return: 			string 	a HTML select field markup 
+	 */
 	function select_field( $args ){
+		$field = "";
 		$field .= sprintf( '<select id="%1$s" name="%2$s" class="%3$s" %4$s>', 
 								esc_attr( $this->field_id ), 
 								esc_attr( $this->field_name ), 
 								esc_attr( implode( $this->field_class, " " ) ), 
 								$this->field_attributes
 						);
-		//datas that should be populated dynamically from $data_json container // 
-		$respond_data = array();
+		//datas that should be populated dynamically from $data_json container and select options // 
+		$respond_data = $choices = array();
+		
 		//our select choices/options //
-		$choices = !empty( $args[ "choices" ] ) ? $args[ "choices" ] : array();
+		if( !empty( $args[ "choices" ] ) ) $choices = $args[ "choices" ];
 		
 		//if we have a data-json index in our $args, we populate our choices dynamically //
 		if( !empty( $args[ "attributes" ][ "data-json" ] )  ){
@@ -424,6 +310,7 @@ class Abbey_Profile_Field {
 							);
 		}//end foreach loop $choices //
 
+		//add an others field if we have it in $args //
 		if( !empty( $args["others"] ) )
 			$field .= sprintf( '<option value="" class="select-others" %1$s>%2$s</option>', 
 								selected( $this->field_value, "", false ),
@@ -431,35 +318,53 @@ class Abbey_Profile_Field {
 							);
 
 		$field .= "</select>";
+
+		return $field;
 			
 	}
 
-	function textarea_field(){
-
+	function textarea_field( $args ){
+		$field = "";
+		if( empty( $args[ "attributes" ][ "rows" ] ) ) $this->field_attributes .= " rows='10' ";
+		if( empty( $args[ "attributes" ][ "cols" ] ) ) $this->field_attributes .= " cols='20' ";
+			
+		$field .= sprintf( '<textarea class="%1$s" name="%2$s" value="%3$s" id="%4$s" %5$s></textarea>', 
+							esc_attr( implode( $this->field_class, " " ) ),
+							esc_attr( $this->field_name ), 
+							esc_attr( $this->field_value ), 
+							esc_attr( $this->field_id ), 
+							$this->field_attributes
+						);
+		return $field;
 	}
 
 	function radio_check_field( $args ){
+		$field = "";
 		$choices = $args[ "choices" ];
 
 		//bail if our $choices is not an array or empty //
 		if( !is_array( $choices ) || empty( $choices ) ) return;
 		
-		$field .= sprintf( '<p class="%s">', esc_attr( implode( $args[ "type" ], " " ) ) );
+		$field .= sprintf( '<p class="%s">', esc_attr( $this->field_type ) );
 		//loop through our choices //
 		foreach( $choices as $key => $choice ){
 			//clone our label from $key or $choice //
 			$label = is_int( $key ) ? $choice : $key;
 
 			$field .= sprintf( '<label><input type="%1$s" name="%2$s" value="%3$s" id="%4$s" %5$s %6$s /> %7$s</label>', 
-								esc_attr( $args["type"] ), 
-								esc_attr( $name ), 
+								esc_attr( $this->field_type ), 
+								esc_attr( $this->field_name ), 
 								$choice, 
-								esc_attr( $id ), 
-								checked( $value, $choice, false ),
-								$attributes,
+								esc_attr( $this->field_id ), 
+								checked( $this->field_value, $choice, false ),
+								$this->field_attributes,
 								esc_html( $label )
 			);
-		}
+		}//end foreach loop //
+
+		$field .= "</p>";
+
+		return $field;
 	}
 	
 
