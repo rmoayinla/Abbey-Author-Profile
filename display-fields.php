@@ -141,13 +141,16 @@ class Abbey_Profile_Field {
 		elseif( !empty( $args[ "repeater_key" ] ) ) {
 			if( !empty ( $this->options[ "repeater" ][ $args[ "repeater_key" ] ] ) ){
 				$repeater = $this->options[ "repeater" ][ $args[ "repeater_key" ] ];
-				if( is_array( $repeater ) && array_key_exists( $args[ "repeater_no" ], $repeater ) )
+				if( is_array( $repeater ) && array_key_exists( $args[ "repeater_no" ], $repeater ) ){
 					$this->field_value = $this->get_field_value( $args[ "repeater_no" ], $args[ "key" ], $repeater );
-			}
+					reset( $repeater );
+					end( $repeater );
+					if( key( $repeater ) == $args[ "repeater_no" ] ) $this->field_class[] = "repeater-group";
+				}
+ 			}
 
 			$args[ "attributes" ][ "data-repeater" ] = $args[ "repeater_no" ];
-			//add a repeater class to our field class attributes //
-			$this->field_class[] = "repeater-group";
+			
 		}
 
 		//no attributes, we are done just bail //
@@ -338,6 +341,13 @@ class Abbey_Profile_Field {
 		return $field;
 	}
 
+	/**
+	 * Create radio and checkbox for the current field 
+	 * the option for the field is fetched and the default radio or checkbox is checked 
+	 * uses HTML5 form markup 
+	 *@param: $args 		array 		field arguments from WP Settings API 
+	 *@return: $field 		string 		html radio or checkbox field 
+	 */
 	function radio_check_field( $args ){
 		$field = "";
 		$choices = $args[ "choices" ];
