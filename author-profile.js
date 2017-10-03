@@ -98,20 +98,21 @@
 
 		$(function () { 
 	      var repeatInput, repeatWrapper, addButton, deleteButton, repeaterForm, elemNum, indexNum; 
-	      repeatInput = $( ".repeater-group" );  
-	      repeatWrapper = repeatInput.parents( "table" ); 
+	      repeatInput = $( ".repeater-group" ).first();  
+	      repeatWrapper = repeatInput.parents( "tr" ).prev( "tr" ).nextUntil( "tbody" ); 
 	       
 	      addButton = '<button type="button" name="btnAdd" class="button btn-primary btn-add">Add</button>'; 
 	      deleteButton = '<button type="button" name="btnDel" class="button btn-danger">Remove</button>'; 
 	       
-	      repeatWrapper.addClass( "repeater-wrapper" ); 
+	      repeatWrapper.wrapAll( "<div class='repeater-wrapper'></div>" );
+	      //repeatWrapper.addClass( "repeater-wrapper" ); 
 	      elemNum = repeatInput.length; 
 	      indexNum = parseInt( elemNum - 1 ); 
 	 
 	      addButtons(); 
 	 
 	      function addButtons(){ 
-	        $( "tr:first-of-type .repeater-group:first-of-type" ).each( function( index ){ 
+	        $( ".repeater-group:first-of-type" ).each( function( index ){ 
 		          var _this, parent; 
 		          _this = $( this ); 
 		          parent = _this.parents( "tbody" ); 
@@ -127,7 +128,7 @@
 	        e.preventDefault(); 
 	        var newElem, _this, repeatElem;  
 	        _this = $( this ); 
-	        repeatElem = _this.parents( "tbody" ); 
+	        repeatElem = _this.parent().prev( ".repeater-wrapper" ); 
 	        newElem = repeatElem.clone( true, true ).fadeIn('slow'); 
 	 
 	        newElem.find( ".repeater-group" ).each( function( i ){ 
